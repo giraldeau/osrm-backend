@@ -116,7 +116,7 @@ template <class DataFacadeT> class RoundTripPlugin final : public BasePlugin
         //          => in_component = [0, 1, 2, 4, 5, 3, 6, 7, 8]
         //          => in_range = [0, 5]
         SCC_Component(std::vector<NodeID> in_component, std::vector<size_t> in_range)
-            : component(in_component), range(in_range)
+            : component(in_component), range(std::move(in_range))
         {
             range.push_back(in_component.size());
 
@@ -312,10 +312,9 @@ template <class DataFacadeT> class RoundTripPlugin final : public BasePlugin
         // compute all round trip routes
         std::vector<InternalRouteResult> comp_route;
         comp_route.reserve(route_result.size());
-        for (std::size_t r = 0; r < route_result.size(); ++r)
+        for (auto &elem : route_result)
         {
-            comp_route.push_back(
-                ComputeRoute(phantom_node_vector, route_parameters, route_result[r]));
+            comp_route.push_back(ComputeRoute(phantom_node_vector, route_parameters, elem));
         }
 
         TIMER_STOP(TRIP_TIMER);
