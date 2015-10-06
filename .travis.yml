@@ -157,11 +157,14 @@ install:
       CMAKE_URL="http://www.cmake.org/files/v3.3/cmake-3.3.2-Linux-x86_64.tar.gz"
       mkdir cmake && travis_retry wget --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C cmake
       export PATH=${DEPS_DIR}/cmake/bin:${PATH}
+
+      OSMOSIS_URL="http://bretth.dev.openstreetmap.org/osmosis-build/osmosis-latest.tgz"
+      mkdir osmosis && travis_retry wget --quiet -O - ${OSMOSIS_URL} | tar --strip-components=1 -xz -C osmosis
+      export PATH=${DEPS_DIR}/osmosis:${PATH}
+
     elif [[ "${TRAVIS_OS_NAME}" == "osx" ]]; then
       brew install cmake boost ccache libzip libstxxl libxml2 lua51 luabind tbb GDAL osmosis
     fi
-  # osmosis
-  - curl -s https://gist.githubusercontent.com/DennisOSRM/803a64a9178ec375069f/raw/ | sudo bash
 
 before_script:
   - cd ${TRAVIS_BUILD_DIR}
