@@ -331,9 +331,6 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
     std::ofstream edge_segment_file(edge_segment_lookup_filename.c_str(), std::ios::binary);
     std::ofstream edge_penalty_file(edge_fixed_penalties_filename.c_str(), std::ios::binary);
 
-    edge_segment_file << "edge_based_edge_id,osm_node_from,osm_node_to,length" << std::endl;
-    edge_penalty_file << "edge_based_edge_id,penalty_deci_secs" << std::endl;
-
     // writes a dummy value that is updated later
     edge_data_file.write((char *)&original_edges_counter, sizeof(unsigned));
 
@@ -496,7 +493,11 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                         QueryNode from = m_node_info_list[previous];
                         QueryNode to = m_node_info_list[q.first];
                         const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
-                        edge_segment_file << m_edge_based_edge_list.size() -1 << "," << m_node_info_list[previous].node_id << "," << m_node_info_list[q.first].node_id << "," << length << std::endl;
+                        size_t new_edge_id = m_edge_based_edge_list.size() -1;
+                        edge_segment_file.write(reinterpret_cast<const char *>(&new_edge_id), sizeof(size_t));
+                        edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[previous].node_id), sizeof(NodeID));
+                        edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[q.first].node_id), sizeof(NodeID));
+                        edge_segment_file.write(reinterpret_cast<const char *>(&length), sizeof(double));
                         previous = q.first;
                     }
                 }
@@ -505,7 +506,11 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                     QueryNode from = m_node_info_list[node_u];
                     QueryNode to = m_node_info_list[node_v];
                     const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
-                    edge_segment_file << m_edge_based_edge_list.size() -1 << "," << m_node_info_list[node_u].node_id << "," << m_node_info_list[node_v].node_id << "," << length << std::endl;
+                    size_t new_edge_id = m_edge_based_edge_list.size() -1;
+                    edge_segment_file.write(reinterpret_cast<const char *>(&new_edge_id), sizeof(size_t));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[node_u].node_id), sizeof(NodeID));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[node_v].node_id), sizeof(NodeID));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&length), sizeof(double));
                 }
             }
         }
