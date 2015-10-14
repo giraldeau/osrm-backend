@@ -348,15 +348,11 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
     unsigned skipped_barrier_turns_counter = 0;
     unsigned compressed = 0;
 
-    //Percent progress(m_node_based_graph->GetNumberOfNodes());
-
-    for (auto n : m_node_info_list) {
-        SimpleLogger().Write() << "  Node info: " << n.node_id;
-    }
+    Percent progress(m_node_based_graph->GetNumberOfNodes());
 
     for (const auto node_u : osrm::irange(0u, m_node_based_graph->GetNumberOfNodes()))
     {
-        //progress.printStatus(node_u);
+        progress.printStatus(node_u);
         for (const EdgeID e1 : m_node_based_graph->GetAdjacentEdgeRange(node_u))
         {
             if (m_node_based_graph->GetEdgeData(e1).reversed)
