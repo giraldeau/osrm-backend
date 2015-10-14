@@ -26,6 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "edge_based_graph_factory.hpp"
+#include "../algorithms/coordinate_calculation.hpp"
 #include "../data_structures/percent.hpp"
 #include "../util/compute_angle.hpp"
 #include "../util/integer_range.hpp"
@@ -232,7 +233,7 @@ void EdgeBasedGraphFactory::Run(const std::string &original_edge_data_filename,
     TIMER_STOP(generate_nodes);
 
     TIMER_START(generate_edges);
-    GenerateEdgeExpandedEdges(original_edge_data_filename, lua_state);
+    GenerateEdgeExpandedEdges(original_edge_data_filename, lua_state,"edge_segments.csv","edge_penalties.csv");
     TIMER_STOP(generate_edges);
 
     SimpleLogger().Write() << "Timing statistics for edge-expanded graph:";
@@ -317,7 +318,9 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedNodes()
 
 /// Actually it also generates OriginalEdgeData and serializes them...
 void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
-    const std::string &original_edge_data_filename, lua_State *lua_state)
+    const std::string &original_edge_data_filename, lua_State *lua_state,
+    const std::string &edge_segment_lookup_filename,
+    const std::string &edge_fixed_penalties_filename)
 {
     SimpleLogger().Write() << "generating edge-expanded edges";
 
@@ -325,6 +328,11 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
     unsigned original_edges_counter = 0;
 
     std::ofstream edge_data_file(original_edge_data_filename.c_str(), std::ios::binary);
+    std::ofstream edge_segment_file(edge_segment_lookup_filename.c_str(), std::ios::binary);
+    std::ofstream edge_penalty_file(edge_fixed_penalties_filename.c_str(), std::ios::binary);
+
+    edge_segment_file << "edge_based_edge_id,osm_node_from,osm_node_to,length" << std::endl;
+    edge_penalty_file << "edge_based_edge_id,penalty_deci_secs" << std::endl;
 
     // writes a dummy value that is updated later
     edge_data_file.write((char *)&original_edges_counter, sizeof(unsigned));
@@ -340,11 +348,15 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
     unsigned skipped_barrier_turns_counter = 0;
     unsigned compressed = 0;
 
-    Percent progress(m_node_based_graph->GetNumberOfNodes());
+    //Percent progress(m_node_based_graph->GetNumberOfNodes());
+
+    for (auto n : m_node_info_list) {
+        SimpleLogger().Write() << "  Node info: " << n.node_id;
+    }
 
     for (const auto node_u : osrm::irange(0u, m_node_based_graph->GetNumberOfNodes()))
     {
-        progress.printStatus(node_u);
+        //progress.printStatus(node_u);
         for (const EdgeID e1 : m_node_based_graph->GetAdjacentEdgeRange(node_u))
         {
             if (m_node_based_graph->GetEdgeData(e1).reversed)
@@ -464,6 +476,41 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
 
                 m_edge_based_edge_list.emplace_back(edge_data1.edge_id, edge_data2.edge_id,
                                   m_edge_based_edge_list.size(), distance, true, false);
+
+
+                // Here is where we write out the mapping between the edge-expanded edges, and
+                // the node-based edges that are originally used to calculate the `distance`
+                // for the edge-expanded edges.  About 40 lines back, there is:
+                //
+                //                 unsigned distance = edge_data1.distance;
+                //
+                // This tells us that the weight for an edge-expanded-edge is based on the weight
+                // of the *source* node-based edge.  Therefore, we will look up the individual
+                // segments of the source node-based edge, and write out a mapping between
+                // those and the edge-based-edge ID.
+                // External programs can then use this mapping to quickly perform
+                // updates to the edge-expanded-edge based directly on its ID.
+                edge_penalty_file << m_edge_based_edge_list.size() << "," << distance - edge_data1.distance << std::endl;
+                if (edge_is_compressed)
+                {
+                    auto node_based_edges = m_compressed_edge_container.GetBucketReference(e1);
+                    NodeID previous = node_u;
+                    for (auto q : node_based_edges)
+                    {
+                        QueryNode from = m_node_info_list[previous];
+                        QueryNode to = m_node_info_list[q.first];
+                        const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
+                        edge_segment_file << m_edge_based_edge_list.size() -1 << "," << m_node_info_list[previous].node_id << "," << m_node_info_list[q.first].node_id << "," << length << std::endl;
+                        previous = q.first;
+                    }
+                }
+                else
+                {
+                    QueryNode from = m_node_info_list[node_u];
+                    QueryNode to = m_node_info_list[node_v];
+                    const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
+                    edge_segment_file << m_edge_based_edge_list.size() -1 << "," << m_node_info_list[node_u].node_id << "," << m_node_info_list[node_v].node_id << "," << length << std::endl;
+                }
             }
         }
     }

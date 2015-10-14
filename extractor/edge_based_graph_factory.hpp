@@ -100,7 +100,9 @@ class EdgeBasedGraphFactory
     unsigned RenumberEdges();
     void GenerateEdgeExpandedNodes();
     void GenerateEdgeExpandedEdges(const std::string &original_edge_data_filename,
-                                   lua_State *lua_state);
+                                   lua_State *lua_state,
+                                   const std::string &edge_segment_lookup_filename,
+                                   const std::string &edge_fixed_penalties_filename);
 
     void InsertEdgeBasedNode(const NodeID u, const NodeID v);
 
