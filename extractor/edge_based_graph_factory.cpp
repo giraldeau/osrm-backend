@@ -233,7 +233,7 @@ void EdgeBasedGraphFactory::Run(const std::string &original_edge_data_filename,
     TIMER_STOP(generate_nodes);
 
     TIMER_START(generate_edges);
-    GenerateEdgeExpandedEdges(original_edge_data_filename, lua_state,"edge_segments.csv","edge_penalties.csv");
+    GenerateEdgeExpandedEdges(original_edge_data_filename, lua_state,"edge_segments.dat","edge_penalties.dat");
     TIMER_STOP(generate_edges);
 
     SimpleLogger().Write() << "Timing statistics for edge-expanded graph:";
@@ -483,34 +483,42 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                 // those and the edge-based-edge ID.
                 // External programs can then use this mapping to quickly perform
                 // updates to the edge-expanded-edge based directly on its ID.
-                edge_penalty_file << m_edge_based_edge_list.size() << "," << distance - edge_data1.distance << std::endl;
+                unsigned fixed_penalty = distance - edge_data1.distance;
+                edge_penalty_file.write(reinterpret_cast<const char *>(&fixed_penalty), sizeof(fixed_penalty));
                 if (edge_is_compressed)
                 {
                     auto node_based_edges = m_compressed_edge_container.GetBucketReference(e1);
                     NodeID previous = node_u;
-                    for (auto q : node_based_edges)
+
+                    unsigned node_count = node_based_edges.size();
+                    edge_segment_file.write(reinterpret_cast<const char *>(&node_count), sizeof(node_count));
+                    const QueryNode &first_node = m_node_info_list[previous];
+                    edge_segment_file.write(reinterpret_cast<const char *>(&first_node.node_id), sizeof(first_node.node_id));
+
+                    auto edge_iter = node_based_edges.begin();
+                    ++edge_iter;
+
+                    for (;edge_iter != node_based_edges.end(); ++edge_iter)
                     {
-                        QueryNode from = m_node_info_list[previous];
-                        QueryNode to = m_node_info_list[q.first];
-                        const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
-                        size_t new_edge_id = m_edge_based_edge_list.size() -1;
-                        edge_segment_file.write(reinterpret_cast<const char *>(&new_edge_id), sizeof(size_t));
-                        edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[previous].node_id), sizeof(NodeID));
-                        edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[q.first].node_id), sizeof(NodeID));
-                        edge_segment_file.write(reinterpret_cast<const char *>(&length), sizeof(double));
-                        previous = q.first;
+                        const QueryNode &from = m_node_info_list[previous];
+                        const QueryNode &to = m_node_info_list[edge_iter->first];
+                        const double segment_length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
+
+                        edge_segment_file.write(reinterpret_cast<const char *>(&to.node_id), sizeof(to.node_id));
+                        edge_segment_file.write(reinterpret_cast<const char *>(&segment_length), sizeof(segment_length));
+                        previous = edge_iter->first;
                     }
                 }
                 else
                 {
+                    unsigned node_count = 2;
                     QueryNode from = m_node_info_list[node_u];
                     QueryNode to = m_node_info_list[node_v];
-                    const double length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
-                    size_t new_edge_id = m_edge_based_edge_list.size() -1;
-                    edge_segment_file.write(reinterpret_cast<const char *>(&new_edge_id), sizeof(size_t));
-                    edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[node_u].node_id), sizeof(NodeID));
-                    edge_segment_file.write(reinterpret_cast<const char *>(&m_node_info_list[node_v].node_id), sizeof(NodeID));
-                    edge_segment_file.write(reinterpret_cast<const char *>(&length), sizeof(double));
+                    const double segment_length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
+                    edge_segment_file.write(reinterpret_cast<const char *>(&node_count), sizeof(node_count));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&from.node_id), sizeof(from.node_id));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&to.node_id), sizeof(to.node_id));
+                    edge_segment_file.write(reinterpret_cast<const char *>(&segment_length), sizeof(segment_length));
                 }
             }
         }

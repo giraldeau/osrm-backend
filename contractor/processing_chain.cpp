@@ -100,12 +100,31 @@ int Prepare::Run()
     return 0;
 }
 
+namespace std {
+
+  template <>
+  struct hash<std::pair<unsigned,unsigned>>
+  {
+    std::size_t operator()(const std::pair<unsigned,unsigned>& k) const
+    {
+        return k.first ^ (k.second << 1);
+    }
+  };
+
+}
+
+
+
 std::size_t Prepare::LoadEdgeExpandedGraph(
                 std::string const & edge_based_graph_filename, 
                 DeallocatingVector<EdgeBasedEdge> & edge_based_edge_list)
 {
     SimpleLogger().Write() << "Opening " << edge_based_graph_filename;
     boost::filesystem::ifstream input_stream(edge_based_graph_filename, std::ios::in | std::ios::binary);
+
+    boost::filesystem::ifstream edge_segment_input_stream("edge_segments.dat", std::ios::in | std::ios::binary);
+    boost::filesystem::ifstream edge_fixed_penalties_input_stream("edge_penalties.dat", std::ios::in | std::ios::binary);
+
 
     const FingerPrint fingerprint_valid = FingerPrint::GetValid();
     FingerPrint fingerprint_loaded;
@@ -120,12 +139,52 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
     edge_based_edge_list.resize(number_of_edges);
     SimpleLogger().Write() << "Reading " << number_of_edges << " edges from the edge based graph";
 
+    std::unordered_map<std::pair<unsigned,unsigned>,unsigned> segment_speed_lookup;
+
     // TODO: can we read this in bulk?  DeallocatingVector isn't necessarily
     // all stored contiguously
-    for (;number_of_edges > 0; --number_of_edges) {
+    for (;number_of_edges > 0; --number_of_edges)
+    {
         EdgeBasedEdge inbuffer;
         input_stream.read((char *) &inbuffer, sizeof(EdgeBasedEdge));
+
+        // Processing-time edge updates
+        unsigned fixed_penalty;
+        edge_fixed_penalties_input_stream.read(reinterpret_cast<char *>(&fixed_penalty), sizeof(fixed_penalty));
+
+        unsigned new_weight = 0;
+
+        unsigned num_osm_nodes = 0;
+        edge_segment_input_stream.read(reinterpret_cast<char *>(&num_osm_nodes), sizeof(num_osm_nodes));
+        NodeID previous_osm_node_id;
+        edge_segment_input_stream.read(reinterpret_cast<char *>(&previous_osm_node_id), sizeof(previous_osm_node_id));
+        NodeID this_osm_node_id;
+        double segment_length;
+        --num_osm_nodes;
+        for(; num_osm_nodes != 0; --num_osm_nodes)
+        {
+            edge_segment_input_stream.read(reinterpret_cast<char *>(&this_osm_node_id), sizeof(this_osm_node_id));
+            edge_segment_input_stream.read(reinterpret_cast<char *>(&segment_length), sizeof(segment_length));
+
+            auto speed_iter = segment_speed_lookup.find(std::pair<unsigned, unsigned>(previous_osm_node_id, this_osm_node_id));
+            if (speed_iter != segment_speed_lookup.end())
+            {
+                new_weight += segment_length * speed_iter->second;
+            }
+
+            previous_osm_node_id = this_osm_node_id;
+        }
+
+        // TODO: there is probably a better way to do this.  We need to handle cases where we only get updates for
+        //       some of the segments on an edge.
+        if (new_weight > 0)
+        {
+            inbuffer.weight = fixed_penalty + new_weight;
+        }
+
         edge_based_edge_list.emplace_back(std::move(inbuffer));
+
+
     }
     SimpleLogger().Write() << "Done reading edges";
     return max_edge_id;
