@@ -490,23 +490,20 @@ void EdgeBasedGraphFactory::GenerateEdgeExpandedEdges(
                     auto node_based_edges = m_compressed_edge_container.GetBucketReference(e1);
                     NodeID previous = node_u;
 
-                    unsigned node_count = node_based_edges.size();
+                    unsigned node_count = node_based_edges.size()+1;
                     edge_segment_file.write(reinterpret_cast<const char *>(&node_count), sizeof(node_count));
                     const QueryNode &first_node = m_node_info_list[previous];
                     edge_segment_file.write(reinterpret_cast<const char *>(&first_node.node_id), sizeof(first_node.node_id));
 
-                    auto edge_iter = node_based_edges.begin();
-                    ++edge_iter;
-
-                    for (;edge_iter != node_based_edges.end(); ++edge_iter)
+                    for (auto target_node : node_based_edges)
                     {
                         const QueryNode &from = m_node_info_list[previous];
-                        const QueryNode &to = m_node_info_list[edge_iter->first];
+                        const QueryNode &to = m_node_info_list[target_node.first];
                         const double segment_length = coordinate_calculation::great_circle_distance(from.lat, from.lon, to.lat, to.lon);
 
                         edge_segment_file.write(reinterpret_cast<const char *>(&to.node_id), sizeof(to.node_id));
                         edge_segment_file.write(reinterpret_cast<const char *>(&segment_length), sizeof(segment_length));
-                        previous = edge_iter->first;
+                        previous = target_node.first;
                     }
                 }
                 else

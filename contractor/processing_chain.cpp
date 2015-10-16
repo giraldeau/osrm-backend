@@ -40,6 +40,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "../util/timing_util.hpp"
 #include "../typedefs.h"
 
+#include <fast-cpp-csv-parser/csv.h>
+
 #include <boost/filesystem/fstream.hpp>
 #include <boost/program_options.hpp>
 
@@ -140,6 +142,14 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
     SimpleLogger().Write() << "Reading " << number_of_edges << " edges from the edge based graph";
 
     std::unordered_map<std::pair<unsigned,unsigned>,unsigned> segment_speed_lookup;
+
+
+    io::CSVReader<3> csv_in("speed_segment.txt");
+    csv_in.read_header(io::ignore_extra_column, "from_node","to_node","speed");
+    unsigned from_node_id; unsigned to_node_id; unsigned speed;
+    while (csv_in.read_row(from_node_id, to_node_id, speed)) {
+        segment_speed_lookup[std::pair<unsigned,unsigned>(from_node_id,to_node_id)] = speed;
+    }
 
     // TODO: can we read this in bulk?  DeallocatingVector isn't necessarily
     // all stored contiguously
