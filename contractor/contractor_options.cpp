@@ -55,7 +55,10 @@ ContractorOptions::ParseArguments(int argc, char *argv[], ContractorConfig &cont
                          ->default_value(tbb::task_scheduler_init::default_num_threads()),
         "Number of threads to use")(
 		"core,k", boost::program_options::value<double>(&contractor_config.core_factor)
-						 ->default_value(1.0),"Percentage of the graph (in vertices) to contract [0.1]");
+						 ->default_value(1.0),"Percentage of the graph (in vertices) to contract [0.1]")(
+		"segment-speed-file", boost::program_options::value<boost::filesystem::path>(&contractor_config.segment_speed_lookup_path),
+						 "Lookup file containing nodeA,nodeB,speed data to adjust edge weights");
+
 
 
 
@@ -125,4 +128,6 @@ void ContractorOptions::GenerateOutputFilesNames(ContractorConfig &contractor_co
     contractor_config.core_output_path = contractor_config.osrm_input_path.string() + ".core";
     contractor_config.graph_output_path = contractor_config.osrm_input_path.string() + ".hsgr";
     contractor_config.edge_based_graph_path = contractor_config.osrm_input_path.string() + ".ebg";
+    contractor_config.edge_segment_lookup_path = contractor_config.osrm_input_path.string() + ".edge_segment_lookup";
+    contractor_config.edge_penalty_path = contractor_config.osrm_input_path.string() + ".edge_penalties";
 }

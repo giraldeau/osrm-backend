@@ -52,6 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <thread>
 #include <vector>
+#include <exception>
 
 Prepare::~Prepare() {}
 
@@ -74,7 +75,10 @@ int Prepare::Run()
 
     DeallocatingVector<EdgeBasedEdge> edge_based_edge_list;
 
-    size_t max_edge_id = LoadEdgeExpandedGraph(config.edge_based_graph_path, edge_based_edge_list);
+    size_t max_edge_id = LoadEdgeExpandedGraph(config.edge_based_graph_path, edge_based_edge_list,
+            config.edge_segment_lookup_path,
+            config.edge_penalty_path,
+            config.segment_speed_lookup_path.string());
 
     // Contracting the edge-expanded graph
 
@@ -119,14 +123,28 @@ namespace std {
 
 std::size_t Prepare::LoadEdgeExpandedGraph(
                 std::string const & edge_based_graph_filename, 
-                DeallocatingVector<EdgeBasedEdge> & edge_based_edge_list)
+                DeallocatingVector<EdgeBasedEdge> & edge_based_edge_list,
+                const std::string & edge_segment_lookup_filename,
+                const std::string & edge_penalty_filename,
+                const std::string & segment_speed_filename)
 {
     SimpleLogger().Write() << "Opening " << edge_based_graph_filename;
     boost::filesystem::ifstream input_stream(edge_based_graph_filename, std::ios::in | std::ios::binary);
 
-    boost::filesystem::ifstream edge_segment_input_stream("edge_segments.dat", std::ios::in | std::ios::binary);
-    boost::filesystem::ifstream edge_fixed_penalties_input_stream("edge_penalties.dat", std::ios::in | std::ios::binary);
+    bool update_edge_weights = segment_speed_filename != "";
 
+    boost::filesystem::ifstream edge_segment_input_stream;
+    boost::filesystem::ifstream edge_fixed_penalties_input_stream;
+
+    if (update_edge_weights)
+    {
+        edge_segment_input_stream.open(edge_segment_lookup_filename, std::ios::in | std::ios::binary);
+        edge_fixed_penalties_input_stream.open(edge_penalty_filename, std::ios::in | std::ios::binary);
+        if (edge_segment_input_stream.is_open() || !edge_fixed_penalties_input_stream.is_open())
+        {
+            throw osrm::exception("Could not load .edge_segment_lookup or .edge_penalties, did you run osrm-extract with '--generate-edge-lookup'?");
+        }
+    }
 
     const FingerPrint fingerprint_valid = FingerPrint::GetValid();
     FingerPrint fingerprint_loaded;
@@ -144,11 +162,15 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
     std::unordered_map<std::pair<unsigned,unsigned>,unsigned> segment_speed_lookup;
 
 
-    io::CSVReader<3> csv_in("speed_segment.txt");
-    csv_in.read_header(io::ignore_extra_column, "from_node","to_node","speed");
-    unsigned from_node_id; unsigned to_node_id; unsigned speed;
-    while (csv_in.read_row(from_node_id, to_node_id, speed)) {
-        segment_speed_lookup[std::pair<unsigned,unsigned>(from_node_id,to_node_id)] = speed;
+    if (update_edge_weights)
+    {
+        SimpleLogger().Write() << "Segment speed data supplied, will update edge weights from " << segment_speed_filename;
+        io::CSVReader<3> csv_in(segment_speed_filename);
+        csv_in.read_header(io::ignore_extra_column, "from_node","to_node","speed");
+        unsigned from_node_id; unsigned to_node_id; unsigned speed;
+        while (csv_in.read_row(from_node_id, to_node_id, speed)) {
+            segment_speed_lookup[std::pair<unsigned,unsigned>(from_node_id,to_node_id)] = speed;
+        }
     }
 
     // TODO: can we read this in bulk?  DeallocatingVector isn't necessarily
@@ -158,38 +180,40 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
         EdgeBasedEdge inbuffer;
         input_stream.read((char *) &inbuffer, sizeof(EdgeBasedEdge));
 
-        // Processing-time edge updates
-        unsigned fixed_penalty;
-        edge_fixed_penalties_input_stream.read(reinterpret_cast<char *>(&fixed_penalty), sizeof(fixed_penalty));
 
-        unsigned new_weight = 0;
-
-        unsigned num_osm_nodes = 0;
-        edge_segment_input_stream.read(reinterpret_cast<char *>(&num_osm_nodes), sizeof(num_osm_nodes));
-        NodeID previous_osm_node_id;
-        edge_segment_input_stream.read(reinterpret_cast<char *>(&previous_osm_node_id), sizeof(previous_osm_node_id));
-        NodeID this_osm_node_id;
-        double segment_length;
-        --num_osm_nodes;
-        for(; num_osm_nodes != 0; --num_osm_nodes)
+        if (update_edge_weights)
         {
-            edge_segment_input_stream.read(reinterpret_cast<char *>(&this_osm_node_id), sizeof(this_osm_node_id));
-            edge_segment_input_stream.read(reinterpret_cast<char *>(&segment_length), sizeof(segment_length));
+            // Processing-time edge updates
+            unsigned fixed_penalty;
+            edge_fixed_penalties_input_stream.read(reinterpret_cast<char *>(&fixed_penalty), sizeof(fixed_penalty));
 
-            auto speed_iter = segment_speed_lookup.find(std::pair<unsigned, unsigned>(previous_osm_node_id, this_osm_node_id));
-            if (speed_iter != segment_speed_lookup.end())
+            int new_weight = -1;
+
+            unsigned num_osm_nodes = 0;
+            edge_segment_input_stream.read(reinterpret_cast<char *>(&num_osm_nodes), sizeof(num_osm_nodes));
+            NodeID previous_osm_node_id;
+            edge_segment_input_stream.read(reinterpret_cast<char *>(&previous_osm_node_id), sizeof(previous_osm_node_id));
+            NodeID this_osm_node_id;
+            double segment_length;
+            --num_osm_nodes;
+            for(; num_osm_nodes != 0; --num_osm_nodes)
             {
-                new_weight += segment_length * speed_iter->second;
+                edge_segment_input_stream.read(reinterpret_cast<char *>(&this_osm_node_id), sizeof(this_osm_node_id));
+                edge_segment_input_stream.read(reinterpret_cast<char *>(&segment_length), sizeof(segment_length));
+
+                auto speed_iter = segment_speed_lookup.find(std::pair<unsigned, unsigned>(previous_osm_node_id, this_osm_node_id));
+                if (speed_iter != segment_speed_lookup.end())
+                {
+                    new_weight += segment_length * speed_iter->second;
+                }
+
+                previous_osm_node_id = this_osm_node_id;
             }
 
-            previous_osm_node_id = this_osm_node_id;
-        }
-
-        // TODO: there is probably a better way to do this.  We need to handle cases where we only get updates for
-        //       some of the segments on an edge.
-        if (new_weight > 0)
-        {
-            inbuffer.weight = fixed_penalty + new_weight;
+            if (new_weight >= 0)
+            {
+                inbuffer.weight = fixed_penalty + new_weight;
+            }
         }
 
         edge_based_edge_list.emplace_back(std::move(inbuffer));
