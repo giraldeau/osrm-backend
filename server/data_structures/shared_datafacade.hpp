@@ -74,6 +74,7 @@ template <class EdgeDataT> class SharedDataFacade final : public BaseDataFacade<
     std::string m_timestamp;
 
     std::shared_ptr<ShM<FixedPointCoordinate, true>::vector> m_coordinate_list;
+    ShM<NodeID, true>::vector m_osm_node_ids;
     ShM<NodeID, true>::vector m_via_node_list;
     ShM<unsigned, true>::vector m_name_ID_list;
     ShM<TurnInstruction, true>::vector m_turn_instruction_list;
@@ -142,6 +143,13 @@ template <class EdgeDataT> class SharedDataFacade final : public BaseDataFacade<
             shared_memory, SharedDataLayout::COORDINATE_LIST);
         m_coordinate_list = osrm::make_unique<ShM<FixedPointCoordinate, true>::vector>(
             coordinate_list_ptr, data_layout->num_entries[SharedDataLayout::COORDINATE_LIST]);
+
+        NodeID *osm_node_ids_ptr =
+            data_layout->GetBlockPtr<NodeID>(shared_memory, SharedDataLayout::OSM_NODE_LIST);
+        typename ShM<NodeID, true>::vector osm_node_ids(
+                osm_node_ids_ptr, data_layout->num_entries[SharedDataLayout::OSM_NODE_LIST]);
+        m_osm_node_ids.swap(osm_node_ids);
+
 
         TravelMode *travel_mode_list_ptr =
             data_layout->GetBlockPtr<TravelMode>(shared_memory, SharedDataLayout::TRAVEL_MODE);
@@ -345,6 +353,12 @@ template <class EdgeDataT> class SharedDataFacade final : public BaseDataFacade<
     FixedPointCoordinate GetCoordinateOfNode(const NodeID id) const override final
     {
         return m_coordinate_list->at(id);
+    };
+
+    // Retrieve the original OSM node ID when given a re-numbered NodeID index
+    NodeID GetOSMNodeID(const unsigned id) const override final
+    {
+        return m_osm_node_ids[id];
     };
 
     virtual bool EdgeIsCompressed(const unsigned id) const override final

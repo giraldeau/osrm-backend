@@ -80,6 +80,7 @@ template <class EdgeDataT> class BaseDataFacade
 
     // node and edge information access
     virtual FixedPointCoordinate GetCoordinateOfNode(const unsigned id) const = 0;
+    virtual NodeID GetOSMNodeID(const unsigned id) const = 0;
 
     virtual bool EdgeIsCompressed(const unsigned id) const = 0;
 
