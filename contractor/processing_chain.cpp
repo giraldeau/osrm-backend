@@ -140,7 +140,7 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
     {
         edge_segment_input_stream.open(edge_segment_lookup_filename, std::ios::in | std::ios::binary);
         edge_fixed_penalties_input_stream.open(edge_penalty_filename, std::ios::in | std::ios::binary);
-        if (edge_segment_input_stream.is_open() || !edge_fixed_penalties_input_stream.is_open())
+        if (!edge_segment_input_stream.is_open() || !edge_fixed_penalties_input_stream.is_open())
         {
             throw osrm::exception("Could not load .edge_segment_lookup or .edge_penalties, did you run osrm-extract with '--generate-edge-lookup'?");
         }
