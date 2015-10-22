@@ -64,7 +64,6 @@ template <class EdgeDataT> class InternalDataFacade final : public BaseDataFacad
     std::string m_timestamp;
 
     std::shared_ptr<ShM<FixedPointCoordinate, false>::vector> m_coordinate_list;
-    ShM<NodeID, false>::vector m_osm_node_ids;
     ShM<NodeID, false>::vector m_via_node_list;
     ShM<unsigned, false>::vector m_name_ID_list;
     ShM<TurnInstruction, false>::vector m_turn_instruction_list;
@@ -74,7 +73,6 @@ template <class EdgeDataT> class InternalDataFacade final : public BaseDataFacad
     ShM<unsigned, false>::vector m_geometry_indices;
     ShM<unsigned, false>::vector m_geometry_list;
     ShM<bool, false>::vector m_is_core_node;
-
 
     boost::thread_specific_ptr<
         StaticRTree<RTreeLeaf, ShM<FixedPointCoordinate, false>::vector, false>> m_static_rtree;
@@ -135,12 +133,10 @@ template <class EdgeDataT> class InternalDataFacade final : public BaseDataFacad
         nodes_input_stream.read((char *)&number_of_coordinates, sizeof(unsigned));
         m_coordinate_list =
             std::make_shared<std::vector<FixedPointCoordinate>>(number_of_coordinates);
-        m_osm_node_ids.resize(number_of_coordinates);
         for (unsigned i = 0; i < number_of_coordinates; ++i)
         {
             nodes_input_stream.read((char *)&current_node, sizeof(QueryNode));
             m_coordinate_list->at(i) = FixedPointCoordinate(current_node.lat, current_node.lon);
-            m_osm_node_ids[i] = current_node.node_id;
             BOOST_ASSERT((std::abs(m_coordinate_list->at(i).lat) >> 30) == 0);
             BOOST_ASSERT((std::abs(m_coordinate_list->at(i).lon) >> 30) == 0);
         }
@@ -344,12 +340,6 @@ template <class EdgeDataT> class InternalDataFacade final : public BaseDataFacad
     FixedPointCoordinate GetCoordinateOfNode(const unsigned id) const override final
     {
         return m_coordinate_list->at(id);
-    };
-
-    // Retrieve the original OSM node ID when given a re-numbered NodeID index
-    NodeID GetOSMNodeID(const unsigned id) const override final
-    {
-        return m_osm_node_ids[id];
     };
 
     bool EdgeIsCompressed(const unsigned id) const override final

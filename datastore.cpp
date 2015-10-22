@@ -499,16 +499,11 @@ int main(const int argc, const char *argv[])
             shared_layout_ptr->GetBlockPtr<FixedPointCoordinate, true>(
                 shared_memory_ptr, SharedDataLayout::COORDINATE_LIST);
 
-        NodeID *osm_node_ids_ptr =
-            shared_layout_ptr->GetBlockPtr<NodeID, true>(
-                shared_memory_ptr, SharedDataLayout::OSM_NODE_LIST);
-
         QueryNode current_node;
         for (unsigned i = 0; i < coordinate_list_size; ++i)
         {
             nodes_input_stream.read((char *)&current_node, sizeof(QueryNode));
             coordinates_ptr[i] = FixedPointCoordinate(current_node.lat, current_node.lon);
-            osm_node_ids_ptr[i] = current_node.node_id;
         }
         nodes_input_stream.close();
 

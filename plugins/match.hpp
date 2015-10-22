@@ -205,13 +205,11 @@ template <class DataFacadeT> class MapMatchingPlugin : public BasePlugin
             FixedPointCoordinate current_coordinate;
             factory.SetStartSegment(raw_route.segment_end_coordinates.front().source_phantom,
                                     raw_route.source_traversed_in_reverse.front());
-            std::vector<NodeID> osm_nodes;
             for (const auto i :
                  osrm::irange<std::size_t>(0, raw_route.unpacked_path_segments.size()))
             {
                 for (const PathData &path_data : raw_route.unpacked_path_segments[i])
                 {
-                    osm_nodes.push_back(facade->GetOSMNodeID(path_data.node));
                     current_coordinate = facade->GetCoordinateOfNode(path_data.node);
                     factory.AppendSegment(current_coordinate, path_data);
                 }
@@ -231,13 +229,6 @@ template <class DataFacadeT> class MapMatchingPlugin : public BasePlugin
             if (route_parameters.geometry)
             {
                 subtrace.values["geometry"] = factory.AppendGeometryString(route_parameters.compression);
-
-                osrm::json::Array nodes;
-                for (const auto &n : osm_nodes)
-                {
-                    nodes.values.emplace_back( n );
-                }
-                subtrace.values["nodes"] = nodes;
             }
 
 

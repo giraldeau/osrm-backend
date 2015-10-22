@@ -53,7 +53,6 @@ struct SharedDataLayout
         GRAPH_NODE_LIST,
         GRAPH_EDGE_LIST,
         COORDINATE_LIST,
-        OSM_NODE_LIST,
         TURN_INSTRUCTION,
         TRAVEL_MODE,
         R_SEARCH_TREE,
@@ -90,8 +89,6 @@ struct SharedDataLayout
                                        << ": " << GetBlockSize(GRAPH_EDGE_LIST);
         SimpleLogger().Write(logDEBUG) << "COORDINATE_LIST      "
                                        << ": " << GetBlockSize(COORDINATE_LIST);
-        SimpleLogger().Write(logDEBUG) << "OSM_NODE_LIST      "
-                                       << ": " << GetBlockSize(OSM_NODE_LIST);
         SimpleLogger().Write(logDEBUG) << "TURN_INSTRUCTION     "
                                        << ": " << GetBlockSize(TURN_INSTRUCTION);
         SimpleLogger().Write(logDEBUG) << "TRAVEL_MODE          "
