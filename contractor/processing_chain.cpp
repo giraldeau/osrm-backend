@@ -166,7 +166,7 @@ std::size_t Prepare::LoadEdgeExpandedGraph(
     {
         SimpleLogger().Write() << "Segment speed data supplied, will update edge weights from " << segment_speed_filename;
         io::CSVReader<3> csv_in(segment_speed_filename);
-        csv_in.read_header(io::ignore_extra_column, "from_node","to_node","speed");
+        csv_in.set_header("from_node","to_node","speed");
         unsigned from_node_id; unsigned to_node_id; unsigned speed;
         while (csv_in.read_row(from_node_id, to_node_id, speed)) {
             segment_speed_lookup[std::pair<unsigned,unsigned>(from_node_id,to_node_id)] = speed;
