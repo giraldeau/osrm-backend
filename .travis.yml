@@ -19,7 +19,7 @@ matrix:
       addons: &clang35
         apt:
           sources: ['llvm-toolchain-precise-3.5', 'ubuntu-toolchain-r-test']
-          packages: ['clang-3.5', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['clang-3.5', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='clang++-3.5' BUILD_TYPE='Release'
 
     - os: linux
@@ -33,7 +33,7 @@ matrix:
       addons: &clang36
         apt:
           sources: ['llvm-toolchain-precise-3.6', 'ubuntu-toolchain-r-test']
-          packages: ['clang-3.6', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['clang-3.6', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='clang++-3.6' BUILD_TYPE='Release'
 
     - os: linux
@@ -47,7 +47,7 @@ matrix:
       addons: &clang37
         apt:
           sources: ['llvm-toolchain-precise-3.7', 'ubuntu-toolchain-r-test']
-          packages: ['clang-3.7', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['clang-3.7', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='clang++-3.7' BUILD_TYPE='Release'
 
     - os: linux
@@ -61,7 +61,7 @@ matrix:
       addons: &clang38
         apt:
           sources: ['llvm-toolchain-precise', 'ubuntu-toolchain-r-test']
-          packages: ['clang-3.8', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['clang-3.8', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='clang++-3.8' BUILD_TYPE='Release'
 
     - os: linux
@@ -76,7 +76,7 @@ matrix:
       addons: &gcc48
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.8', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['g++-4.8', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='g++-4.8' BUILD_TYPE='Release'
 
     - os: linux
@@ -90,7 +90,7 @@ matrix:
       addons: &gcc49
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-4.9', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['g++-4.9', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='g++-4.9' BUILD_TYPE='Release'
 
     - os: linux
@@ -104,7 +104,7 @@ matrix:
       addons: &gcc5
         apt:
           sources: ['ubuntu-toolchain-r-test']
-          packages: ['g++-5', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
+          packages: ['g++-5', 'libbz2-dev', 'libstxxl-dev', 'libstxxl1', 'libxml2-dev', 'libzip-dev', 'lua5.1', 'liblua5.1-0-dev', 'rubygems-integration', 'libtbb-dev', 'libgdal-dev', 'libluabind-dev']
       env: COMPILER='g++-5' BUILD_TYPE='Release'
 
     - os: linux
