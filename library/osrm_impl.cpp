@@ -41,6 +41,7 @@ class named_mutex;
 #include "../plugins/timestamp.hpp"
 #include "../plugins/trip.hpp"
 #include "../plugins/viaroute.hpp"
+#include "../plugins/evroute.hpp"
 #include "../plugins/match.hpp"
 #include "../server/data_structures/datafacade_base.hpp"
 #include "../server/data_structures/internal_datafacade.hpp"

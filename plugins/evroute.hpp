@@ -25,8 +25,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 */
 
-#ifndef VIA_ROUTE_HPP
-#define VIA_ROUTE_HPP
+#ifndef EV_ROUTE_HPP
+#define EV_ROUTE_HPP
 
 #include "plugin_base.hpp"
 
@@ -209,4 +209,4 @@ template <class DataFacadeT> class EvRoutePlugin final : public BasePlugin
     }
 };
 
-#endif // VIA_ROUTE_HPP
+#endif // EV_ROUTE_HPP
