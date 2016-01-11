@@ -44,10 +44,10 @@ Thumbs.db
 
 # Eclipse related files #
 #########################
-.setting*
+#.setting*
 .scb
-.cproject
-.project
+#.cproject
+#.project
 
 # stxxl related files #
 #######################
