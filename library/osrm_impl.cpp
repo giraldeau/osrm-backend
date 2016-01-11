@@ -89,6 +89,8 @@ OSRM::OSRM_impl::OSRM_impl(LibOSRMConfig& lib_config)
                 lib_config.max_locations_viaroute));
     RegisterPlugin(new RoundTripPlugin<BaseDataFacade<QueryEdge::EdgeData>>(query_data_facade,
                 lib_config.max_locations_trip));
+    RegisterPlugin(new EvRoutePlugin<BaseDataFacade<QueryEdge::EdgeData>>(query_data_facade,
+                lib_config.max_locations_trip));
 }
 
 void OSRM::OSRM_impl::RegisterPlugin(BasePlugin *raw_plugin_ptr)
